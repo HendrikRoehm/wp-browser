@@ -1,0 +1,15 @@
+{
+    "name": "test/composer-project",
+    "description": "A test Composer project",
+    "type": "project",
+    "authors": [
+        {
+            "name": "theAverageDev (Luca Tumedei)",
+            "email": "luca@theaveragedev.com"
+        }
+    ],
+    "require": {},
+    "require-dev": {
+        "lucatume/wp-browser": "^2.0"
+    }
+}

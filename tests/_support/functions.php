@@ -4,8 +4,8 @@ namespace tad\WPBrowser\Tests\Support;
 
 function importDump($dumpFile, $dbName, $dbUser = 'root', $dbPass = 'root', $dbHost = 'localhost')
 {
-    if(strpos($dbHost,':') >0){
-        list($dbHost, $dbPort) = explode(':',$dbHost);
+    if (strpos($dbHost, ':') > 0) {
+        list($dbHost, $dbPort) = explode(':', $dbHost);
         $dbHost = sprintf('%s -P %d', $dbHost, $dbPort);
     }
 
@@ -43,12 +43,49 @@ function getMySQLVersion()
 }
 
 /**
-* Normalizes a string new line bytecode for comparison
-* through Unix and Windows environments.
-*
-* @see https://stackoverflow.com/a/7836692/2056484
-*/
+ * Normalizes a string new line bytecode for comparison
+ * through Unix and Windows environments.
+ *
+ * @see https://stackoverflow.com/a/7836692/2056484
+ */
 function normalizeNewLine($str)
 {
-	return preg_replace('~(*BSR_ANYCRLF)\R~', "\n", $str);
+    return preg_replace('~(*BSR_ANYCRLF)\R~', "\n", $str);
+}
+
+function copy_recursive($source, $dest, $permissions = 0755)
+{
+    // Check for symlinks
+    if (is_link($source)) {
+        return symlink(readlink($source), $dest);
+    }
+
+    // Simple copy for a file
+    if (is_file($source)) {
+        return copy($source, $dest);
+    }
+
+    // Make destination directory
+    if (!is_dir($dest)) {
+        if (!mkdir($dest, $permissions) && !is_dir($dest)) {
+            throw new \RuntimeException(sprintf('Directory "%s" was not created', $dest));
+        }
+    }
+
+    // Loop through the folder
+    $dir = dir($source);
+    while (false !== $entry = $dir->read()) {
+        // Skip pointers
+        if ($entry === '.' || $entry === '..') {
+            continue;
+        }
+
+        // Deep copy directories
+        copy_recursive("$source/$entry", "$dest/$entry", $permissions);
+    }
+
+    // Clean up
+    $dir->close();
+
+    return true;
 }

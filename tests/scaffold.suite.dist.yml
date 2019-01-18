@@ -1,0 +1,4 @@
+actor: ScaffoldTester
+modules:
+    enabled:
+        - \Helper\Scaffold

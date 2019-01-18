@@ -5,12 +5,15 @@ namespace Codeception\Template;
 use Codeception\Exception\ModuleConfigException;
 use Dotenv\Dotenv;
 use Symfony\Component\Console\Exception\RuntimeException;
+use Symfony\Component\Console\Helper\QuestionHelper;
+use Symfony\Component\Console\Question\ChoiceQuestion;
+use Symfony\Component\Console\Question\ConfirmationQuestion;
+use Symfony\Component\Console\Question\Question;
 use Symfony\Component\Yaml\Yaml;
 use tad\WPBrowser\Template\Data;
 
 class Wpbrowser extends Bootstrap
 {
-
     /**
      * @var bool
      */
@@ -22,9 +25,19 @@ class Wpbrowser extends Bootstrap
     protected $noInteraction = false;
 
     /**
-     * @var
+     * @var string
      */
     protected $envFileName = '';
+
+    /**
+     * @var QuestionHelper
+     */
+    protected static $questionHelper;
+
+    public static function _seQuestionHelper($questionHelper)
+    {
+        static::$questionHelper = $questionHelper;
+    }
 
     /**
      * @param bool $interactive
@@ -39,15 +52,15 @@ class Wpbrowser extends Bootstrap
 
         $input = $this->input;
 
-        $this->quiet = $this->input->getOption('quiet');
-        $this->noInteraction = $this->input->getOption('no-interaction');
+        $this->quiet = $this->input->hasOption('quiet') && $this->input->getOption('quiet');
+        $this->noInteraction = $this->input->hasOption('no-interaction') && $this->input->getOption('no-interaction');
 
         if ($this->noInteraction || $this->quiet) {
             $interactive = false;
         }
 
-        if ($input->getOption('namespace')) {
-            $this->namespace = trim($input->getOption('namespace'), '\\') . '\\';
+        if ($input->hasOption('namespace') && $namespace = $input->getOption('namespace')) {
+            $this->namespace = trim($namespace, '\\') . '\\';
         }
 
         if ($input->hasOption('actor') && $input->getOption('actor')) {
@@ -676,5 +689,23 @@ EOF;
             exit(0);
         }
         echo PHP_EOL;
+    }
+
+    protected function ask($question, $answer = null)
+    {
+        $question = "? $question";
+        $dialog = static::$questionHelper ?: new QuestionHelper();
+        if (is_array($answer)) {
+            $question .= " <info>(" . $answer[0] . ")</info> ";
+            return $dialog->ask($this->input, $this->output, new ChoiceQuestion($question, $answer, 0));
+        }
+        if (is_bool($answer)) {
+            $question .= " (y/n) ";
+            return $dialog->ask($this->input, $this->output, new ConfirmationQuestion($question, $answer));
+        }
+        if ($answer) {
+            $question .= " <info>($answer)</info>";
+        }
+        return $dialog->ask($this->input, $this->output, new Question("$question ", $answer));
     }
 }
