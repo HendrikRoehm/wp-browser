@@ -76,3 +76,20 @@ if (!function_exists('wpbrowser_includes_dir')) {
         return !empty($path) ? $root . ltrim($path, '/') : $root;
     }
 }
+
+if (!function_exists('isRegex')) {
+    function isRegex($string)
+    {
+        try {
+            set_error_handler(function () {
+                throw new Exception();
+            });
+            $isRegex = preg_match($string, null) !== false;
+        } catch (\Exception $e) {
+            restore_error_handler();
+            return false;
+        }
+        restore_error_handler();
+        return $isRegex;
+    }
+}

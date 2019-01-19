@@ -21,6 +21,15 @@ class Scaffold extends \Codeception\Module
     use QuestionTester;
 
     /**
+     * @var array
+     */
+    protected static $defaultQuestionMap = [
+        'I acknowledge wp-browser' => 'yes',
+        '/How would you like the .* suite to be called/' => "\n",
+        'How would you like to call the env configuration' => "\n",
+    ];
+
+    /**
      * @var \Symfony\Component\Console\Input\Input
      */
     protected $input;
@@ -46,21 +55,47 @@ class Scaffold extends \Codeception\Module
     protected $mockQuestionHelper;
 
     /**
+     * @var array
+     */
+    protected $currentQuestionMap = [];
+
+    /**
      * @Given I am initializing wp-browser
      */
     public function iAmInitializingWpbrowser()
     {
+        $this->currentQuestionMap = static::$defaultQuestionMap;
         $this->scaffoldInitializedComposerProject();
 
         $this->command = new Init('init');
         $this->command->setHelperSet(new HelperSet());
         $this->mockQuestionHelper($this->command, function ($text, $order, Question $question) {
-            throw new UnhandledQuestionException();
+            $map = $this->currentQuestionMap;
+
+            $matchingKeys = array_values(array_filter(array_keys($map), function ($questionPattern) use ($text) {
+                return isRegex($questionPattern) ?
+                    preg_match($questionPattern, $text)
+                    : strpos($text, $questionPattern) !== false;
+            }));
+
+            if (count($matchingKeys) > 1) {
+                throw new \RuntimeException('There is more than 1 pattern matching the question "' . $text . '", found patterns: ' . json_encode($matchingKeys));
+            }
+
+            if (count($matchingKeys) === 1) {
+                return $map[reset($matchingKeys)];
+            }
+
+            throw new UnhandledQuestionException('Question "' . $text . '" matches no pattern.');
         });
         $this->mockQuestionHelper = $this->command->getHelper('question');
-        Wpbrowser::_seQuestionHelper($this->mockQuestionHelper);
+        // Really an hack to inject, yet there is no other entry point with no refactoring cost.
+        Wpbrowser::$_questionHelper = $this->mockQuestionHelper;
         $this->commandTester = new CommandTester($this->command);
-        $this->commandTester->execute(['template' => 'wpbrowser', '--path' => $this->projectDir]);
+        $this->commandTester->execute([
+            'template' => 'wpbrowser',
+            '--path' => $this->projectDir,
+        ]);
     }
 
     /**

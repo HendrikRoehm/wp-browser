@@ -30,14 +30,11 @@ class Wpbrowser extends Bootstrap
     protected $envFileName = '';
 
     /**
+     * Really hack-ish way to inject a dependency, meh.
+     *
      * @var QuestionHelper
      */
-    protected static $questionHelper;
-
-    public static function _seQuestionHelper($questionHelper)
-    {
-        static::$questionHelper = $questionHelper;
-    }
+    public static $_questionHelper;
 
     /**
      * @param bool $interactive
@@ -694,13 +691,14 @@ EOF;
     protected function ask($question, $answer = null)
     {
         $question = "? $question";
-        $dialog = static::$questionHelper ?: new QuestionHelper();
+        // Kind of an hack to "inject" the question helper in tests context.
+        $dialog = static::$_questionHelper ?: new QuestionHelper();
         if (is_array($answer)) {
-            $question .= " <info>(" . $answer[0] . ")</info> ";
+            $question .= ' <info>(' . $answer[0] . ')</info> ';
             return $dialog->ask($this->input, $this->output, new ChoiceQuestion($question, $answer, 0));
         }
         if (is_bool($answer)) {
-            $question .= " (y/n) ";
+            $question .= ' (y/n) ';
             return $dialog->ask($this->input, $this->output, new ConfirmationQuestion($question, $answer));
         }
         if ($answer) {
