@@ -2,3 +2,5 @@ actor: ScaffoldTester
 modules:
     enabled:
         - \Helper\Scaffold
+        - Filesystem
+        - Asserts

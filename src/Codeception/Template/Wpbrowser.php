@@ -292,6 +292,23 @@ class Wpbrowser extends Bootstrap
 
         $this->checkEnvFileExistence();
 
+        $this->say('<info>' . implode(PHP_EOL, [
+                'wp-browser can scaffold a fully functional WordPress installation running using SQLite and PHP built-in server and configure itself to use it.',
+                'This installation can be used for all types of tests but the ones requiring more complex setups and/or testing a multi-site installation.',
+            ]) . '</info>');
+        $useSqliteInstallation = $this->ask('Would you like to scaffold a SQLite and PHP built-in server based test WordPress installation?', false);
+        $installationData['useSqliteInstallation'] = (bool)$useSqliteInstallation;
+        if ($useSqliteInstallation) {
+            $this->say('<info>' . implode(PHP_EOL, [
+                    'WordPress is served at a URL like "http://localhost:8080".',
+                    'You can change the port used by the PHP built-in server to avoid conflicts with other applications that might be listening on localhost ports.',
+                ]) . '</info>');
+            $localhostPort = $this->ask('What localhost port should the WordPress installation use?', '8080');
+            $installationData['localhostPort'] = (int)$localhostPort;
+
+            return $installationData;
+        }
+
         echo PHP_EOL;
         $this->sayInfo('WPLoader and WordPress modules need to access the WordPress files to work.');
         echo PHP_EOL;
